@@ -1,10 +1,11 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {connect} from 'react-redux';
 import CanvasContext from './CanvasContext';
-
+import { update } from './slices/allCharactersSlice';
 import {MOVE_DIRECTIONS, MAP_DIMENSIONS, TILE_SIZE} from './mapConstants';
 import { MY_CHARACTER_INIT_CONFIG } from './characterConstants';
 import {checkMapCollision} from './utils';
+import { useDispatch } from 'react-redux';
 
 const GameLoop = ({children, allCharactersData}) => {
     const canvasRef = useRef(null);
@@ -17,16 +18,43 @@ const GameLoop = ({children, allCharactersData}) => {
 
     // keeps the reference to the main rendering loop
     const loopRef = useRef();
-    const mycharacterData = allCharactersData[MY_CHARACTER_INIT_CONFIG.id];
+    const dispatch = useDispatch();
+    const myCharacterData = allCharactersData[MY_CHARACTER_INIT_CONFIG.id];
 
     const moveMyCharacter = useCallback((e) => {
-        var currentPosition = mycharacterData.position;
-        const key = e.key;
-        if (MOVE_DIRECTIONS[key]) {
-            // ***********************************************
-            // TODO: Add your move logic here
+        var currentPosition = myCharacterData.position;
+        const key = e.key.toLowerCase();
+        if(!MOVE_DIRECTIONS[key]) {
+            return;
         }
-    }, [mycharacterData]);
+
+        if(MOVE_DIRECTIONS[key]) {
+            const [dx, dy] = MOVE_DIRECTIONS[key];
+            const newPosition = {
+                x: currentPosition.x + dx,
+                y: currentPosition.y + dy,
+            };
+
+            if(checkMapCollision(newPosition.x, newPosition.y)) {
+                console.log("Blocked by wall or out of bounds!");
+                return;
+            }
+
+            dispatch(update({
+                ...allCharactersData,
+                [MY_CHARACTER_INIT_CONFIG.id]: {
+                    ...myCharacterData,
+                    position: newPosition
+                }
+            }));
+        }
+
+
+        // if (MOVE_DIRECTIONS[key]) {
+        //     // ***********************************************
+        //     // TODO: Add your move logic here
+        // }
+    }, [myCharacterData, allCharactersData]);
 
     const tick = useCallback(() => {
         if (context != null) {
