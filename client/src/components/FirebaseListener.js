@@ -17,12 +17,10 @@ const FirebaseListener = () => {
             }
         });
 
-        return () => {
-            // Cleanup handled automatically by Firebase SDK
-        };
+        
     }, [dispatch]);
 
-    return null; // This component doesn't render anything
+    return null;
 };
 
 export default FirebaseListener;
