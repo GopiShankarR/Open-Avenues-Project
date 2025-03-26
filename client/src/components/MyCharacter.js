@@ -6,7 +6,9 @@ import {CHARACTER_IMAGE_SIZE, CHARACTER_CLASSES_MAP} from './characterConstants'
 import {TILE_SIZE} from './mapConstants';
 import {loadCharacter} from './slices/statusSlice';
 import { MY_CHARACTER_INIT_CONFIG } from './characterConstants';
-import {update as updateAllCharactersData} from './slices/allCharactersSlice'
+import {update as updateAllCharactersData} from './slices/allCharactersSlice';
+import { ref, set } from "firebase/database";
+import { firebaseDatabase } from "../firebase/firebase";
 
 
 function MyCharacter({ myCharactersData, loadCharacter, updateAllCharactersData, webrtcSocket }) {
@@ -21,6 +23,7 @@ function MyCharacter({ myCharactersData, loadCharacter, updateAllCharactersData,
         const myId = MY_CHARACTER_INIT_CONFIG.id;
         users[myId] = myInitData;
         updateAllCharactersData(users);
+        set(ref(firebaseDatabase, `users/${myId}`), myInitData);
     }, [webrtcSocket]);
 
     useEffect(() => {

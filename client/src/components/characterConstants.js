@@ -1,4 +1,6 @@
 import { v4 as uuid } from 'uuid';
+import { ref, set } from "firebase/database";
+import { firebaseDatabase } from "../firebase/firebase";
 import { io } from 'socket.io-client'
 
 export const CHARACTER_IMAGE_SIZE = 32;
@@ -17,4 +19,11 @@ export const MY_CHARACTER_INIT_CONFIG = {
     id: uuid(),
     position: {x: 12, y: 12},
     characterClass: 'ENGINEER',
+};
+
+export const moveMyCharacterTo = (x, y) => {
+    set(ref(firebaseDatabase, `users/${MY_CHARACTER_INIT_CONFIG.id}/position`), {
+        x,
+        y,
+    });
 };

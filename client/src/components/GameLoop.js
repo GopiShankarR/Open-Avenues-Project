@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {connect} from 'react-redux';
 import CanvasContext from './CanvasContext';
 import { update } from './slices/allCharactersSlice';
+import { moveMyCharacterTo } from './characterConstants';
 import {MOVE_DIRECTIONS, MAP_DIMENSIONS, TILE_SIZE} from './mapConstants';
 import { MY_CHARACTER_INIT_CONFIG } from './characterConstants';
 import {checkMapCollision} from './utils';
@@ -47,14 +48,10 @@ const GameLoop = ({children, allCharactersData}) => {
                     position: newPosition
                 }
             }));
+            
+            moveMyCharacterTo(newPosition.x, newPosition.y);
         }
-
-
-        // if (MOVE_DIRECTIONS[key]) {
-        //     // ***********************************************
-        //     // TODO: Add your move logic here
-        // }
-    }, [myCharacterData, allCharactersData]);
+    }, [myCharacterData]);
 
     const tick = useCallback(() => {
         if (context != null) {
