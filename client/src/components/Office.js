@@ -5,6 +5,8 @@ import ImagesBuffer from './ImagesBuffer';
 import Map from './Map';
 import CanvasContext from './CanvasContext';
 import MyCharacter from './MyCharacter';
+import OtherCharacters from './OtherCharacters';
+import FirebaseListener from './FirebaseListener';
 import {MAP_DIMENSIONS, TILE_SIZE, MAP_TILE_IMAGES} from './mapConstants';
 
 const Office = ({mapImagesLoaded, gameStatus, webrtcSocket}) => {
@@ -20,6 +22,7 @@ const Office = ({mapImagesLoaded, gameStatus, webrtcSocket}) => {
 
     return (
         <>
+            <FirebaseListener />
             <ImagesBuffer />
             {Object.keys(mapImagesLoaded).length === Object.keys(MAP_TILE_IMAGES).length &&
                 <>
@@ -29,6 +32,7 @@ const Office = ({mapImagesLoaded, gameStatus, webrtcSocket}) => {
                 </>
             }
             {gameStatus.mapLoaded && <MyCharacter webrtcSocket={webrtcSocket}/>}
+            {gameStatus.mapLoaded && <OtherCharacters />}
         </>
     );
 };

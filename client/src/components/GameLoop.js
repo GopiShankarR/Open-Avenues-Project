@@ -12,12 +12,10 @@ const GameLoop = ({children, allCharactersData}) => {
     const canvasRef = useRef(null);
     const [context, setContext] = useState(null);
     useEffect(() => {
-        // frameCount used for re-rendering child components
         console.log("initial setContext");
         setContext({canvas: canvasRef.current.getContext('2d'), frameCount: 0});
     }, [setContext]);
 
-    // keeps the reference to the main rendering loop
     const loopRef = useRef();
     const dispatch = useDispatch();
     const myCharacterData = allCharactersData[MY_CHARACTER_INIT_CONFIG.id];
@@ -51,7 +49,7 @@ const GameLoop = ({children, allCharactersData}) => {
             
             moveMyCharacterTo(newPosition.x, newPosition.y);
         }
-    }, [myCharacterData]);
+    }, [myCharacterData, allCharactersData, dispatch]);
 
     const tick = useCallback(() => {
         if (context != null) {
