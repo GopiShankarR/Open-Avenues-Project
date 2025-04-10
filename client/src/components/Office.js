@@ -7,6 +7,7 @@ import CanvasContext from './CanvasContext';
 import MyCharacter from './MyCharacter';
 import OtherCharacters from './OtherCharacters';
 import FirebaseListener from './FirebaseListener';
+import VideoChat from './VideoChat';
 import {MAP_DIMENSIONS, TILE_SIZE, MAP_TILE_IMAGES} from './mapConstants';
 
 const Office = ({mapImagesLoaded, gameStatus, webrtcSocket}) => {
@@ -33,6 +34,10 @@ const Office = ({mapImagesLoaded, gameStatus, webrtcSocket}) => {
             }
             {gameStatus.mapLoaded && <MyCharacter webrtcSocket={webrtcSocket}/>}
             {gameStatus.mapLoaded && <OtherCharacters />}
+
+            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
+                <VideoChat webrtcSocket={webrtcSocket} />
+            </div>
         </>
     );
 };
