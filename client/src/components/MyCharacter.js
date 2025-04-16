@@ -1,5 +1,5 @@
 import React, { useEffect, useContext } from 'react';
-import { connect, useDispatch } from 'react-redux';
+import { connect } from 'react-redux';
 import CanvasContext from './CanvasContext';
 import { CHARACTER_IMAGE_SIZE, CHARACTER_CLASSES_MAP, MY_CHARACTER_INIT_CONFIG } from './characterConstants';
 import { TILE_SIZE } from './mapConstants';
@@ -10,7 +10,6 @@ import { firebaseDatabase } from '../firebase/firebase';
 
 function MyCharacter({ myCharactersData, loadCharacter, updateAllCharactersData, webrtcSocket }) {
   const context = useContext(CanvasContext);
-  const dispatch = useDispatch();
 
   useEffect(() => {
     const myInitData = {

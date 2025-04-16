@@ -47,7 +47,6 @@ const Office = ({
       <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
         <VideoChat
           webrtcSocket={webrtcSocket}
-          // This flag could come from your app logic or UI
           isInitiator={true}
           mySocketId={mySocketId}
           targetUserSocketId={targetUserSocketId}
@@ -61,11 +60,9 @@ const mapStateToProps = (state) => {
   const allUsers = state.allCharacters.users;
   const myUserId = MY_CHARACTER_INIT_CONFIG.id;
 
-  // Find your own record
   const myUser = allUsers[myUserId];
   const mySocketId = myUser ? myUser.socketId : null;
 
-  // For a simple two‑user scenario, pick the first other user
   const otherUser = Object.values(allUsers).find((u) => u.id !== myUserId);
   const targetUserSocketId = otherUser ? otherUser.socketId : null;
 

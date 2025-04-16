@@ -10,7 +10,6 @@ function VideoChat({
   const [localStream, setLocalStream] = useState(null);
   const videoRef = useRef(null);
 
-  // Capture local video on mount
   useEffect(() => {
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
@@ -25,7 +24,6 @@ function VideoChat({
       });
   }, []);
 
-  // Listen for incoming offers if this client is NOT the initiator
   useEffect(() => {
     if (!isInitiator) {
       webrtcSocket.on('offer', (payload) => {

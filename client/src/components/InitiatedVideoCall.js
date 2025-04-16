@@ -12,14 +12,12 @@ function InitiatedVideoCall({
   useEffect(() => {
     if (!localStream || !mySocketId || !targetUserSocketId) return;
 
-    // Create a Peer in initiator mode
     peerRef.current = new Peer({
       initiator: true,
       trickle: false,
       stream: localStream
     });
 
-    // When the SDP offer is ready, send it to the server with caller/target IDs
     peerRef.current.on('signal', (offerSignal) => {
       console.log(
         'InitiatedVideoCall – sending offer:',
@@ -32,7 +30,6 @@ function InitiatedVideoCall({
       });
     });
 
-    // Clean up when unmounting
     return () => {
       peerRef.current.destroy();
     };
