@@ -20,16 +20,13 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
 
-  // Tell the client its own socket ID
   socket.emit('me', socket.id);
 
-  // Listen for offer-signals from initiators
   socket.on('offer', (payload) => {
     const { callFromUserSocketId, callToUserSocketId, offerSignal } = payload;
     console.log(
       `Offer received from ${callFromUserSocketId} → ${callToUserSocketId}`
     );
-    // Forward that offer only to the intended recipient
     if (callToUserSocketId) {
       io.to(callToUserSocketId).emit('offer', payload);
     }
