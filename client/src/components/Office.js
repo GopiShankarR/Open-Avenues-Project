@@ -24,6 +24,9 @@ const Office = ({
   const height = MAP_DIMENSIONS.ROWS * TILE_SIZE;
   const context = useContext(CanvasContext);
 
+  const params = new URLSearchParams(window.location.search);
+  const isInitiator = params.get('initiator') === 'true';
+
   useEffect(() => {
     return () => {
       context && context.canvas.clearRect(0, 0, context.canvas.width, context.canvas.height);
@@ -47,9 +50,9 @@ const Office = ({
       <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
         <VideoChat
           webrtcSocket={webrtcSocket}
-          isInitiator={true}
+          isInitiator={isInitiator}
           mySocketId={mySocketId}
-          targetUserSocketId={targetUserSocketId}
+          targetUserSocketId={isInitiator ? targetUserSocketId : null}
         />
       </div>
     </>

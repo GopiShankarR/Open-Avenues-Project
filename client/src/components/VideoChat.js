@@ -1,69 +1,112 @@
 import React, { useEffect, useRef, useState } from 'react';
-import InitiatedVideoCall from './InitiatedVideoCall';
+import Peer from 'simple-peer';
 
-function VideoChat({
-  webrtcSocket,
-  isInitiator,
-  mySocketId,
-  targetUserSocketId
-}) {
+function VideoChat({ webrtcSocket, isInitiator, mySocketId, targetUserSocketId }) {
   const [localStream, setLocalStream] = useState(null);
-  const videoRef = useRef(null);
+  const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const peerRef = useRef(null);
 
   useEffect(() => {
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
-      .then((stream) => {
+      .then(stream => {
         setLocalStream(stream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
         }
       })
-      .catch((err) => {
-        console.error('Error accessing camera/mic:', err);
-      });
+      .catch(err => console.error('Error accessing media devices:', err));
   }, []);
 
   useEffect(() => {
-    if (!isInitiator) {
-      webrtcSocket.on('offer', (payload) => {
-        console.log('Non‑initiator received offer:', payload);
+    if (!localStream) return;
+    let peer;
+
+    if (isInitiator && mySocketId && targetUserSocketId) {
+      peer = new Peer({ initiator: true, trickle: false, stream: localStream });
+      peer.on('signal', offerSignal => {
+        console.log('⚡ Sending OFFER:', offerSignal);
+        webrtcSocket.emit('offer', {
+          callFromUserSocketId: mySocketId,
+          callToUserSocketId: targetUserSocketId,
+          offerSignal
+        });
       });
-      return () => {
-        webrtcSocket.off('offer');
-      };
+
+    } else if (!isInitiator) {
+      peer = new Peer({ initiator: false, trickle: false, stream: localStream });
+      webrtcSocket.once('offer', payload => {
+        console.log('⚡ Received OFFER:', payload.offerSignal);
+        peer.on('signal', answerSignal => {
+          console.log('⚡ Sending ANSWER:', answerSignal);
+          webrtcSocket.emit('answer', {
+            callFromUserSocketId: mySocketId,
+            callToUserSocketId: payload.callFromUserSocketId,
+            answerSignal
+          });
+        });
+        peer.signal(payload.offerSignal);
+      });
     }
+
+    if (peer) {
+      peer.on('stream', remoteStream => {
+        console.log('🏞  Remote stream arrived');
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStream;
+        }
+      });
+      peerRef.current = peer;
+    }
+
+    return () => {
+      if (peerRef.current) peerRef.current.destroy();
+      webrtcSocket.off('offer');
+    };
+  }, [
+    isInitiator,
+    localStream,
+    mySocketId,
+    targetUserSocketId,
+    webrtcSocket
+  ]);
+
+  useEffect(() => {
+    if (!isInitiator) return;
+    webrtcSocket.on('answer', payload => {
+      console.log('⚡ Received ANSWER:', payload.answerSignal);
+      if (peerRef.current) {
+        peerRef.current.signal(payload.answerSignal);
+      }
+    });
+    return () => {
+      webrtcSocket.off('answer');
+    };
   }, [isInitiator, webrtcSocket]);
 
   return (
     <div
       style={{
         display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '1rem'
+        justifyContent: 'center',
+        gap: '1rem',
+        marginTop: '1rem'
       }}
     >
-      <h2>Video Chat</h2>
       <video
-        ref={videoRef}
+        ref={localVideoRef}
+        autoPlay
+        muted
+        playsInline
+        style={{ width: 200, height: 150, backgroundColor: 'black' }}
+      />
+      <video
+        ref={remoteVideoRef}
         autoPlay
         playsInline
-        muted
-        style={{ width: 150, height: 100, backgroundColor: 'black' }}
+        style={{ width: 200, height: 150, backgroundColor: 'black' }}
       />
-
-      {isInitiator &&
-        localStream &&
-        mySocketId &&
-        targetUserSocketId && (
-          <InitiatedVideoCall
-            webrtcSocket={webrtcSocket}
-            localStream={localStream}
-            mySocketId={mySocketId}
-            targetUserSocketId={targetUserSocketId}
-          />
-        )}
     </div>
   );
 }

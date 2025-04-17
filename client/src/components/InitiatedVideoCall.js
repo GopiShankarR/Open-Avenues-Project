@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import Peer from 'simple-peer';
 
-function InitiatedVideoCall({
+export default function InitiatedVideoCall({
   webrtcSocket,
   localStream,
   mySocketId,
@@ -20,7 +20,7 @@ function InitiatedVideoCall({
 
     peerRef.current.on('signal', (offerSignal) => {
       console.log(
-        'InitiatedVideoCall – sending offer:',
+        'InitiatedVideoCall - sending offer:',
         { callFromUserSocketId: mySocketId, callToUserSocketId: targetUserSocketId }
       );
       webrtcSocket.emit('offer', {
@@ -30,12 +30,18 @@ function InitiatedVideoCall({
       });
     });
 
+    webrtcSocket.on('answer', (payload) => {
+      if (payload.callToUserSocketId === mySocketId) {
+        console.log('Client 1 got answer:', payload.answerSignal);
+        peerRef.current.signal(payload.answerSignal);
+      }
+    });
+
     return () => {
+      webrtcSocket.off('answer');
       peerRef.current.destroy();
     };
   }, [localStream, mySocketId, targetUserSocketId, webrtcSocket]);
 
   return null;
 }
-
-export default InitiatedVideoCall;
