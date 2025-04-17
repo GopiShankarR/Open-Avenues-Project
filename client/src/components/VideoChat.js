@@ -26,7 +26,7 @@ function VideoChat({ webrtcSocket, isInitiator, mySocketId, targetUserSocketId }
     if (isInitiator && mySocketId && targetUserSocketId) {
       peer = new Peer({ initiator: true, trickle: false, stream: localStream });
       peer.on('signal', offerSignal => {
-        console.log('⚡ Sending OFFER:', offerSignal);
+        console.log('Sending OFFER:', offerSignal);
         webrtcSocket.emit('offer', {
           callFromUserSocketId: mySocketId,
           callToUserSocketId: targetUserSocketId,
@@ -37,9 +37,9 @@ function VideoChat({ webrtcSocket, isInitiator, mySocketId, targetUserSocketId }
     } else if (!isInitiator) {
       peer = new Peer({ initiator: false, trickle: false, stream: localStream });
       webrtcSocket.once('offer', payload => {
-        console.log('⚡ Received OFFER:', payload.offerSignal);
+        console.log('Received OFFER:', payload.offerSignal);
         peer.on('signal', answerSignal => {
-          console.log('⚡ Sending ANSWER:', answerSignal);
+          console.log('Sending ANSWER:', answerSignal);
           webrtcSocket.emit('answer', {
             callFromUserSocketId: mySocketId,
             callToUserSocketId: payload.callFromUserSocketId,
@@ -52,7 +52,7 @@ function VideoChat({ webrtcSocket, isInitiator, mySocketId, targetUserSocketId }
 
     if (peer) {
       peer.on('stream', remoteStream => {
-        console.log('🏞  Remote stream arrived');
+        console.log('Remote stream arrived');
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = remoteStream;
         }
@@ -75,7 +75,7 @@ function VideoChat({ webrtcSocket, isInitiator, mySocketId, targetUserSocketId }
   useEffect(() => {
     if (!isInitiator) return;
     webrtcSocket.on('answer', payload => {
-      console.log('⚡ Received ANSWER:', payload.answerSignal);
+      console.log('Received ANSWER:', payload.answerSignal);
       if (peerRef.current) {
         peerRef.current.signal(payload.answerSignal);
       }
