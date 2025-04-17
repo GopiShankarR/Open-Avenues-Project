@@ -32,6 +32,15 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('answer', payload => {
+    console.log(
+      `Answer received from ${payload.callFromUserSocketId} → ${payload.callToUserSocketId}`
+    );
+    if (payload.callToUserSocketId) {
+      io.to(payload.callToUserSocketId).emit('answer', payload);
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
   });
