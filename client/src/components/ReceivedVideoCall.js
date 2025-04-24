@@ -1,5 +1,4 @@
-// src/components/ReceivedVideoCall.js
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Peer from 'simple-peer';
 
 export default function ReceivedVideoCall({
@@ -7,34 +6,74 @@ export default function ReceivedVideoCall({
   localStream,
   mySocketId
 }) {
-  const peerRef = useRef();
+  const [remoteStream, setRemoteStream] = useState(null);
+  const localVideoRef  = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const peerRef        = useRef(null);
 
   useEffect(() => {
-    webrtcSocket.on('offer', (payload) => {
-      console.log('Client 2 got offer:', payload);
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream]);
 
-      peerRef.current = new Peer({
+  useEffect(() => {
+    if (!localStream || !mySocketId) return;
+
+    const handleOffer = (payload) => {
+      if (payload.callToUserSocketId !== mySocketId) return;
+
+      const peer = new Peer({
         initiator: false,
-        trickle: false,
-        stream: localStream
+        trickle:   false,
+        stream:    localStream
       });
+      peerRef.current = peer;
 
-      peerRef.current.on('signal', (answerSignal) => {
-        console.log('Client 2 sending answer:', answerSignal);
+      peer.on('signal', answerSignal => {
         webrtcSocket.emit('answer', {
           callFromUserSocketId: mySocketId,
-          callToUserSocketId: payload.callFromUserSocketId,
+          callToUserSocketId:   payload.callFromUserSocketId,
           answerSignal
         });
       });
 
-      peerRef.current.signal(payload.offerSignal);
-    });
+      peer.on('stream', stream => setRemoteStream(stream));
+
+      peer.signal(payload.offerSignal);
+    };
+
+    webrtcSocket.on('offer', handleOffer);
 
     return () => {
-      webrtcSocket.off('offer');
+      webrtcSocket.off('offer', handleOffer);
+      if (peerRef.current) peerRef.current.destroy();
     };
   }, [webrtcSocket, localStream, mySocketId]);
 
-  return null;
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
+  return (
+    <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+      <video
+        ref={localVideoRef}
+        autoPlay
+        muted
+        playsInline
+        style={{ width: 200, height: 150, backgroundColor: 'black' }}
+      />
+      {remoteStream && (
+        <video
+          ref={remoteVideoRef}
+          autoPlay
+          playsInline
+          style={{ width: 200, height: 150, backgroundColor: 'black' }}
+        />
+      )}
+    </div>
+  );
 }

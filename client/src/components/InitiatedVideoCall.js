@@ -1,47 +1,88 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Peer from 'simple-peer';
 
 export default function InitiatedVideoCall({
   webrtcSocket,
-  localStream,
+  localStream, 
   mySocketId,
   targetUserSocketId
 }) {
-  const peerRef = useRef();
+  const peerRef = useRef(null);
+  const [remoteStream, setRemoteStream] = useState(null);
+
+  const createPeer = useCallback(
+    (targetId, callerId, stream, socket) => {
+      const peer = new Peer({
+        initiator: true,
+        trickle: false,
+        stream
+      });
+      peer.on('signal', offerSignal => {
+        socket.emit('offer', {
+          callFromUserSocketId: callerId,
+          callToUserSocketId: targetId,
+          offerSignal
+        });
+      });
+      return peer;
+    },
+    []
+  );
 
   useEffect(() => {
     if (!localStream || !mySocketId || !targetUserSocketId) return;
 
-    peerRef.current = new Peer({
-      initiator: true,
-      trickle: false,
-      stream: localStream
-    });
+    peerRef.current = createPeer(
+      targetUserSocketId,
+      mySocketId,
+      localStream,
+      webrtcSocket
+    );
 
-    peerRef.current.on('signal', (offerSignal) => {
-      console.log(
-        'InitiatedVideoCall - sending offer:',
-        { callFromUserSocketId: mySocketId, callToUserSocketId: targetUserSocketId }
-      );
-      webrtcSocket.emit('offer', {
-        callFromUserSocketId: mySocketId,
-        callToUserSocketId: targetUserSocketId,
-        offerSignal
-      });
-    });
-
-    webrtcSocket.on('answer', (payload) => {
-      if (payload.callToUserSocketId === mySocketId) {
-        console.log('Client 1 got answer:', payload.answerSignal);
+    const handleAnswer = payload => {
+      if (
+        payload.callToUserSocketId === mySocketId &&
+        peerRef.current
+      ) {
+        console.log('Received answer signal:', payload.answerSignal);
         peerRef.current.signal(payload.answerSignal);
       }
-    });
+    };
+    webrtcSocket.on('answer', handleAnswer);
+
+    const handleStream = stream => {
+      console.log('Received remote stream from peer');
+      setRemoteStream(stream);
+    };
+    peerRef.current.on('stream', handleStream);
 
     return () => {
-      webrtcSocket.off('answer');
-      peerRef.current.destroy();
-    };
-  }, [localStream, mySocketId, targetUserSocketId, webrtcSocket]);
+      webrtcSocket.off('answer', handleAnswer);
 
-  return null;
+      if (peerRef.current) {
+        peerRef.current.removeListener('stream', handleStream);
+        peerRef.current.destroy();
+        peerRef.current = null;
+      }
+
+      setRemoteStream(null);
+    };
+  }, [
+    createPeer,
+    localStream,
+    mySocketId,
+    targetUserSocketId,
+    webrtcSocket
+  ]);
+
+  return remoteStream ? (
+    <video
+      autoPlay
+      playsInline
+      ref={vid => {
+        if (vid) vid.srcObject = remoteStream;
+      }}
+      style={{ width: 200, height: 150, backgroundColor: 'black' }}
+    />
+  ) : null;
 }

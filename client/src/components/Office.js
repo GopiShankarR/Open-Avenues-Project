@@ -1,37 +1,67 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { connect } from 'react-redux';
 
-import Grid from './Grid';
-import ImagesBuffer from './ImagesBuffer';
-import Map from './Map';
-import CanvasContext from './CanvasContext';
-import MyCharacter from './MyCharacter';
-import OtherCharacters from './OtherCharacters';
+import CanvasContext    from './CanvasContext';
+import ImagesBuffer     from './ImagesBuffer';
+import Grid             from './Grid';
+import Map              from './Map';
+import MyCharacter      from './MyCharacter';
+import OtherCharacters  from './OtherCharacters';
 import FirebaseListener from './FirebaseListener';
-import VideoChat from './VideoChat';
+import VideoChat        from './VideoChat';
 
-import { MAP_DIMENSIONS, TILE_SIZE, MAP_TILE_IMAGES } from './mapConstants';
+import {
+  MAP_DIMENSIONS,
+  TILE_SIZE,
+  MAP_TILE_IMAGES
+} from './mapConstants';
 import { MY_CHARACTER_INIT_CONFIG } from './characterConstants';
 
-const Office = ({
+function Office({
   mapImagesLoaded,
   gameStatus,
   webrtcSocket,
   mySocketId,
-  targetUserSocketId
-}) => {
-  const width = MAP_DIMENSIONS.COLS * TILE_SIZE;
-  const height = MAP_DIMENSIONS.ROWS * TILE_SIZE;
+  allCharactersData
+}) {
+  const width   = MAP_DIMENSIONS.COLS * TILE_SIZE;
+  const height  = MAP_DIMENSIONS.ROWS * TILE_SIZE;
   const context = useContext(CanvasContext);
 
-  const params = new URLSearchParams(window.location.search);
-  const isInitiator = params.get('initiator') === 'true';
+  const [localStream, setLocalStream] = useState(null);
+  const localVideoRef = useRef(null);
+
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true })
+      .then(stream => {
+        console.log("📹 got local stream");
+        setLocalStream(stream);
+      })
+      .catch(err => console.error("Error getting local media:", err));
+  }, []);
+
+  useEffect(() => {
+    if (localStream && localVideoRef.current) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream]);
 
   useEffect(() => {
     return () => {
-      context && context.canvas.clearRect(0, 0, context.canvas.width, context.canvas.height);
+      if (context) {
+        context.canvas.clearRect(
+          0, 0,
+          context.canvas.canvas.width,
+          context.canvas.canvas.height
+        );
+      }
     };
   }, [context]);
+
+  const myUserId   = MY_CHARACTER_INIT_CONFIG.id;
+  const otherUsers = Object.values(allCharactersData)
+    .filter(u => u.id !== myUserId && !!u.socketId);
 
   return (
     <>
@@ -47,34 +77,42 @@ const Office = ({
       {gameStatus.mapLoaded && <MyCharacter webrtcSocket={webrtcSocket} />}
       {gameStatus.mapLoaded && <OtherCharacters />}
 
-      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
-        <VideoChat
-          webrtcSocket={webrtcSocket}
-          isInitiator={isInitiator}
-          mySocketId={mySocketId}
-          targetUserSocketId={isInitiator ? targetUserSocketId : null}
-        />
+      <div style={{
+        marginTop: '1rem',
+        display:       'flex',
+        flexWrap:      'wrap',
+        gap:           '1rem',
+        justifyContent:'center'
+      }}>
+        {localStream && (
+          <video
+            ref={localVideoRef}
+            autoPlay
+            muted
+            playsInline
+            style={{ width:200, height:150, backgroundColor:'black' }}
+          />
+        )}
+
+        {localStream && otherUsers.map(u => (
+          <VideoChat
+            key={u.socketId}
+            webrtcSocket={webrtcSocket}
+            localStream={localStream}
+            mySocketId={mySocketId}
+            peerSocketId={u.socketId}
+          />
+        ))}
       </div>
     </>
   );
-};
+}
 
-const mapStateToProps = (state) => {
-  const allUsers = state.allCharacters.users;
-  const myUserId = MY_CHARACTER_INIT_CONFIG.id;
-
-  const myUser = allUsers[myUserId];
-  const mySocketId = myUser ? myUser.socketId : null;
-
-  const otherUser = Object.values(allUsers).find((u) => u.id !== myUserId);
-  const targetUserSocketId = otherUser ? otherUser.socketId : null;
-
-  return {
-    mapImagesLoaded: state.mapImagesLoaded,
-    gameStatus: state.gameStatus,
-    mySocketId,
-    targetUserSocketId
-  };
-};
+const mapStateToProps = (state) => ({
+  mapImagesLoaded:    state.mapImagesLoaded,
+  gameStatus:         state.gameStatus,
+  allCharactersData:  state.allCharacters.users,
+  mySocketId:         state.allCharacters.users[MY_CHARACTER_INIT_CONFIG.id]?.socketId
+});
 
 export default connect(mapStateToProps)(Office);
