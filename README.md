@@ -10,6 +10,12 @@ A browser-based virtual office where each participant:
 
 ---
 
+## 🎥 Live Demo
+
+▶️ [Click here to watch the video demo](Demo.mp4)
+
+--
+
 ## Architecture Diagram
 
 ![Overall Architecture](image.jpg)
