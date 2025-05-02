@@ -45,10 +45,12 @@ npx serve -s build
 # shows the grid and avatars/video for each connected user.
 
 ```
+## Note
 
-## Note:
-# After editing client/*
-# Delete the existing users created in firebase, and then start the localhost again
+- After editing `client/*`  
+- Delete any existing users in Firebase, then restart your front-end
+
+```bash
 cd client
 npm run-script build
 npx serve -s build
